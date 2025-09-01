@@ -1,0 +1,41 @@
+name: 🎂 Birthday Wishes Workflow
+
+on:
+  schedule:
+    - cron: "30 18 * * *"   # 12:00 AM IST (6:30 PM UTC)
+  workflow_dispatch:         # manual run button भी मिलेगा
+
+jobs:
+  send-birthday-mail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install msmtp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y msmtp ca-certificates
+
+      - name: Setup msmtp config
+        run: |
+          cat <<EOF > ~/.msmtprc
+          defaults
+          auth on
+          tls on
+          tls_trust_file /etc/ssl/certs/ca-certificates.crt
+          account gmail
+          host smtp.gmail.com
+          port 587
+          from $GMAIL_USER
+          user $GMAIL_USER
+          password $GMAIL_PASS
+          account default : gmail
+          EOF
+          chmod 600 ~/.msmtprc
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+
+      - name: Run Birthday Script
+        run: bash birthday.sh
